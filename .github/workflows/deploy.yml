@@ -1,0 +1,38 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches:
+      - main      # Despliega a producción
+      - qa        # Despliega a QA
+    paths:
+      - 'backend/**'    # Solo se ejecuta cuando hay cambios en backend
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set environment variables
+        run: |
+          if [[ ${{ github.ref }} == 'refs/heads/main' ]]; then
+            echo "DOCKER_COMPOSE_FILE=docker-compose.prod.yml" >> $GITHUB_ENV
+          else
+            echo "DOCKER_COMPOSE_FILE=docker-compose.qa.yml" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/mmagna/qr-system
+            git pull
+            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} down backend-prod
+            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} build --no-cache backend-prod
+            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} up -d backend-prod
