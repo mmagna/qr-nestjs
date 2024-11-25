@@ -25,7 +25,11 @@ async function bootstrap() {
   );
 
   // Configurar CORS
-  app.enableCors();
+  app.enableCors({
+    origin: ['https://ticketsqradmin.novabites.cl'], // Permite tu dominio del frontend
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+});
 
   // Configurar Swagger
   const config = new DocumentBuilder()
